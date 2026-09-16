@@ -1,14 +1,9 @@
 # 淘宝知识库问答助手
 
 <p align="center">
-  <img src="./docs/cover-banner.png" alt="淘宝知识库问答助手封面" width="100%" />
+  <img src="./docs/cover-banner.svg" alt="淘宝知识库问答助手封面" width="100%" />
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python" alt="Python" />
-  <img src="https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/RAG-Knowledge%20QA-FF7A59?style=for-the-badge" alt="RAG" />
-</p>
 
 一个基于 RAG（Retrieval-Augmented Generation，检索增强生成）思路实现的淘宝知识库问答系统。它会先从知识库中检索与用户问题最相关的文档，再把检索结果和问题一起发送给大模型生成回答，并在最终输出中附带参考来源。
 
@@ -25,7 +20,7 @@
 ## Demo 预览
 
 <p align="center">
-  <img src="./docs/demo-preview.png" alt="Demo 预览" width="100%" />
+  <img src="./docs/demo-preview.jpg" alt="Demo 预览" width="100%" />
 </p>
 
 ## 技术栈
@@ -265,3 +260,4 @@ export RAG_TOP_K=5
 该仓库已补充 `.gitignore`，已覆盖 Python 虚拟环境、缓存目录、IDE 配置和敏感环境变量文件，避免把 `.venv`、`.env`、缓存文件等不必要内容上传到 Git。
 
 如果你将该项目用于展示、汇报或上线部署，建议优先准备真实业务知识库，再绑定稳定的 DashScope 模型参数即可。
+
