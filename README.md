@@ -1,7 +1,7 @@
 # 淘宝知识库问答助手
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/CLX-great/RAG-taobao-knowledge-base-qa/main/docs/cover-banner.svg" alt="淘宝知识库问答助手封面" width="100%" />
+  <img src="./docs/cover-banner.png" alt="淘宝知识库问答助手封面" width="100%" />
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@
 ## Demo 预览
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/CLX-great/RAG-taobao-knowledge-base-qa/main/docs/demo-preview.svg" alt="Demo 预览" width="100%" />
+  <img src="./docs/demo-preview.png" alt="Demo 预览" width="100%" />
 </p>
 
 ## 技术栈
