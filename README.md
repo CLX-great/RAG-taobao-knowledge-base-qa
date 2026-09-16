@@ -1,316 +1,130 @@
-# 智能流量套餐推荐系统（basic）
+# RAG Knowledge Assistant
 
-基于 FastAPI + LangChain + One API 构建的模拟通信运营商客服智能问答系统，用于根据用户需求推荐合适的手机流量套餐。
+这是一个以 RAG（Retrieval-Augmented Generation，检索增强生成）为主线的 LangChain + FastAPI 淘宝知识库问答项目。系统会先检索订单、退款、物流、售后等资料，再把检索结果交给兼容 OpenAI API 的大模型生成回答。
 
-## 项目简介
-
-本项目模拟一个运营商客服系统，通过调用大语言模型（LLM），结合提示词工程（Prompt Engineering），实现对用户流量套餐需求的智能推荐。
-
-系统能够：
-
-- 接收用户问题，例如“有没有土豪套餐”
-- 根据预设套餐信息进行推理
-- 返回自然语言形式的推荐结果
-- 支持流式与非流式输出
-
----
-
-## 系统架构
+## RAG 流程
 
 ```text
-客户端（apiTest.py）
-        ↓
-FastAPI 后端服务（main.py，端口 8000）
-        ↓
-One API 中转服务（localhost:3000）
-        ↓
-大语言模型（Qwen 等）
+用户问题 -> 文档切块 -> TF-IDF 检索 -> 拼接参考资料 -> LLM 生成 -> 返回来源
 ```
 
----
+核心实现位于 `rag/`，资料位于 `knowledge_base/`。检索器只使用 Python 标准库，因此不需要单独部署向量数据库；后续可以在同一接口替换为 Chroma、FAISS 或远程向量服务。
 
 ## 项目结构
 
 ```text
-basic/
-├── main.py                      # FastAPI 后端服务
-├── apiTest.py                   # 客户端测试脚本
-├── prompt_template_system.txt   # 系统提示词模板
-├── prompt_template_user.txt     # 用户提示词模板
-├── requirements.txt             # 项目依赖文件
-├── README.md                    # 项目说明文档
-└── .gitignore                   # Git 忽略文件配置
+rag/
+|- main.py                 # 共享 FastAPI RAG 服务
+|- retriever.py            # 文档切块与 TF-IDF 检索
+knowledge_base/             # 可直接编辑的 .md/.txt 知识库
+rag_smoke_test.py           # 不依赖 LLM 的检索测试
+basic/ ... withMemoryTest/  # 兼容入口，统一转发到共享 RAG 服务
 ```
 
----
-
-## 环境配置
-
-### 1. 克隆项目
-
-```bash
-git clone https://github.com/你的用户名/你的仓库.git
-cd basic
-```
-
-### 2. 创建并激活虚拟环境
+## 安装与配置
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-```
-
-### 3. 安装依赖
-
-```bash
 pip install -r requirements.txt
+
+export OPENAI_BASE_URL=http://localhost:3000/v1
+export OPENAI_API_KEY=your-key
+export OPENAI_CHAT_MODEL=qwen-turbo
 ```
 
-### 4. 配置 One API
+`OPENAI_BASE_URL` 可以指向 OneAPI 或其他 OpenAI-compatible 服务。不要把真实 API Key 写入代码或提交到仓库。
 
-请先确保本地 One API 服务已经启动，并且地址为：
+## 运行
 
-```text
-http://localhost:3000
-```
-
-同时需要在 One API 后台完成：
-
-- 添加模型渠道
-- 配置可用模型
-- 创建可用 Token
-- 确认 Token 具有对应模型权限
-
-### 5. 配置模型信息
-
-在 `main.py` 中确认以下配置：
-
-```python
-ONEAPI_API_BASE = "http://localhost:3000/v1"
-ONEAPI_CHAT_MODEL = "qwen-turbo"
-```
-
-注意：请不要将真实 API Key 上传到 GitHub。建议使用环境变量保存密钥。
-
----
-
-## 启动项目
-
-### 1. 启动后端服务
+先验证本地检索，不需要启动模型服务：
 
 ```bash
-python main.py
+python rag_smoke_test.py
 ```
 
-成功启动后，服务会运行在：
-
-```text
-http://localhost:8000
-```
-
-### 2. 运行测试脚本
-
-打开新的终端窗口，运行：
+启动后端：
 
 ```bash
-python apiTest.py
+python -m rag.main
 ```
 
----
+服务地址为 `http://localhost:8000`，接口文档为 `http://localhost:8000/docs`。历史目录仍可直接运行，例如 `python basic/main.py`，它们只是共享 RAG 服务的兼容入口，并分别保留原来的端口号。
 
-## 示例输入与输出
+### 本地网页
 
-### 输入
-
-```text
-有没有土豪套餐
-```
-
-### 输出示例
-
-```text
-有的，可以考虑无限套餐，每月 300 元，包含 1000G 流量，适合流量需求特别大的用户。
-```
-
----
-
-## 功能说明
-
-- 基于 Prompt 的流量套餐推荐
-- 使用 FastAPI 构建本地 API 服务
-- 使用 LangChain 管理 Prompt 与模型调用
-- 通过 One API 接入大语言模型
-- 支持普通非流式输出
-- 支持 Streaming 流式输出
-- 返回格式兼容 OpenAI API 的 `choices` 结构
-
----
-
-## 常见问题
-
-### 1. 端口被占用怎么办？
-
-如果 `8000` 端口被占用，可以使用：
+另开一个终端运行：
 
 ```bash
-lsof -i :8000
-kill -9 PID
+python -m http.server 8080 --directory basicWebUI
 ```
 
-或直接一行：
+然后打开 `http://localhost:8080`。网页默认请求 `http://localhost:8000`。
+
+### 放到个人主页展示
+
+个人主页和 RAG 后端需要分别部署：
+
+1. 将 `basicWebUI/index.html` 部署到 GitHub Pages、Vercel 或 Netlify。
+2. 将 Python 后端部署到 Render、Railway、阿里云或自己的服务器，并获得 HTTPS 地址，例如 `https://your-rag-api.example.com`。
+3. 在网页部署前，在 `index.html` 的脚本中加入：
+
+```html
+<script>
+  window.RAG_API_URL = "https://your-rag-api.example.com";
+</script>
+```
+
+   这段配置要放在原有问答脚本之前。
+4. 后端启动时把主页域名加入允许跨域来源：
 
 ```bash
-lsof -ti :8000 | xargs kill -9
+export RAG_ALLOWED_ORIGINS=https://your-homepage.example.com
+python -m rag.main
 ```
 
-### 2. 出现 401 错误怎么办？
+不要把 `OPENAI_API_KEY` 放进网页代码。它只能配置在后端服务器环境变量中。
 
-通常表示没有正确提供 Token，需要检查请求头或 One API 配置。
+### 使用 Docker 部署
 
-### 3. 出现 403 错误怎么办？
+项目提供了 `Dockerfile`、`basicWebUI/Dockerfile` 和 `docker-compose.yml`。Docker Compose 会启动后端和 Nginx 网页，访客只需要访问同一个地址。
 
-通常表示 Token 没有权限调用当前模型，需要在 One API 后台检查模型权限。
+先在项目根目录创建 `.env`：
 
-### 4. 出现 `KeyError: choices` 怎么办？
-
-说明接口返回的是错误信息，而不是正常模型结果。应先打印：
-
-```python
-print(response.status_code)
-print(response.text)
+```dotenv
+OPENAI_BASE_URL=https://你的云端模型地址/v1
+OPENAI_API_KEY=你的真实密钥
+OPENAI_CHAT_MODEL=qwen-turbo
+RAG_ALLOWED_ORIGINS=http://localhost:8080
 ```
 
-再根据错误信息排查。
+启动：
 
----
-## 升级➡️对话记忆（Memory）功能（withMemoryTest）
-
-为了提升系统的智能化程度，本项目引入了基于 **LangChain + SQLite** 的对话记忆机制，使模型能够结合历史对话进行更准确的回答。
-
-### 功能特点
-
-- 支持多轮对话上下文记忆
-- 根据 `userId` 和 `conversationId` 区分不同用户会话
-- 自动存储并读取历史聊天记录
-- 限制历史长度（默认保留最近 10 条）以提高效率
-- 让模型具备“上下文理解能力”
-
----
-
-### 工作流程
-
-```text
-用户请求
-   ↓
-FastAPI 接口接收请求
-   ↓
-根据 userId + conversationId 获取历史记录（SQLite）
-   ↓
-拼接 Prompt（System + History + 当前问题）
-   ↓
-调用 LLM（Qwen 等）
-   ↓
-返回结果并更新历史记录
+```bash
+docker compose up -d --build
 ```
 
-### 事例效果
-<img width="2636" height="1320" alt="image" src="https://github.com/user-attachments/assets/812cc176-187f-4407-892e-eb67c14b25f2" />
+本地访问：`http://localhost:8080`。停止服务：
 
-```text
-根据图片可以看出，支持多轮对话上下文记忆。并且对于与流量套餐无关的内容，客服没有胡乱回答，而是进行了提醒。
+```bash
+docker compose down
 ```
 
----
+部署到公网服务器时，将 `8080:80` 改成 `80:80` 或由 HTTPS 反向代理转发到 8080，然后把 `OPENAI_BASE_URL` 配成云端可访问的模型服务地址。不要把 `.env` 提交到 Git，也不要把 API Key 写入前端页面。
 
-## 升级➡️质量检查测试（cot）
+## API
 
-本项目调用的是大语言模型接口，因此模型的回答并不是完全固定的规则判断结果。即使输入内容相同，模型在多次运行时也可能返回不同结果。
-### 事例效果
-<img width="1564" height="1448" alt="image" src="https://github.com/user-attachments/assets/ffa88db7-4d8a-4492-a41b-502e6cbde626" />
+请求 `POST /v1/chat/completions`：
 
-```text
-这个问题正确输出应该是N，根据图片可以看到它有时候输出N，有时候输出Y。不过后面输出N更多一些。
+```json
+{
+  "messages": [{"role": "user", "content": "流量最多的套餐是什么？"}],
+  "stream": false
+}
 ```
 
----
+回答会在末尾附上检索来源，例如 `telecom_plans.md#0`。健康检查使用 `GET /health`，编辑知识库后可调用 `POST /v1/knowledge/reload` 重新加载。
 
-## 升级➡️质量检查测试2(selfConsistency)
+## 扩展知识库
 
-本项目调用的是大语言模型接口，因此模型的回答并不是完全固定的规则判断结果。即使输入内容相同，模型在多次运行时也可能返回不同结果。
-
-为提高判断结果的稳定性，本项目进行了以下优化：
-
-### 1. Prompt 优化
-
-在 `prompt_template_system.txt` 中新增了以下要求：
-
-```text
-请一步一步分析后再作出回答
-```
-
-该设置用于引导模型在给出最终判断前先进行逐步推理，从而减少直接给出错误结论的情况。
-
-### 2. 多次调用与投票机制
-
-在代码层面，系统会对同一输入连续调用模型 5 次，并统计每次输出中的 Y 和 N 数量。
-
-最终系统会根据多数投票结果返回判断：
-
-- 如果 Y 的数量更多，则输出 Y
-- 如果 N 的数量更多，则输出 N
-- 如果两者数量相同，则默认输出 Y
-
-这种方式可以降低单次模型输出不稳定带来的影响，提高整体判断结果的可靠性。
-
-相关核心逻辑位于 main.py 中的 /v1/chat/completions 接口部分，代码会循环调用模型 5 次，并分别统计 Y 和 N 的出现次数。
-
-### 事例效果
-
-<img width="2094" height="454" alt="image" src="https://github.com/user-attachments/assets/faf8452c-c0d9-4977-9f3b-5a90095decde" />
-
-```text
-结果与预期完全一致
-因此，系统通过多次调用与多数投票机制，最终可以得到更稳定、更接近正确结果的判断。
-```
-
-## 升级➡️扩展了思维链NEW（sportservice）
-
-本项目实现了一个基于 LangChain 的多阶段推理系统（Multi-Chain Pipeline）。
-
-### 推理流程
-
-```text
-输入：用户能力描述
-        ↓
-Chain1：能力分析（结构化输出）
-        ↓
-Chain2：候选生成（可能运动项目）
-        ↓
-Chain3：能力匹配评估（约束过滤）
-        ↓
-Chain4：报告生成（自然语言输出）
-```
-
-### 核心特点
-
-- 使用多个 Prompt 分阶段推理
-- 每个 Chain 只负责单一任务（职责清晰）
-- 引入剪枝（Pruning）优化推理效率
-- 避免无效结果生成
-
-### 示例输出
-<img width="1000" height="500" alt="image" src="https://github.com/user-attachments/assets/65a7216b-c594-41ae-8b58-1ee466630ec8" />
-<img width="1000" height="500" alt="image" src="https://github.com/user-attachments/assets/9411c620-a043-4948-8f01-48d98116567e" />
-<img width="1000" height="406" alt="image" src="https://github.com/user-attachments/assets/824c89b0-8aa0-4db8-b691-84f0a74b7fc5" />
-
-## 最终升级➡️加UI界面（basicWebUI）
-
-### 示例输出
-
-<img width="2606" height="1384" alt="image" src="https://github.com/user-attachments/assets/9304c199-ab69-49e4-a550-fc21e94d2c79" />
-
-
-## 作者
-
-Linxing Cui  
-The University of Sydney
+将 `.md` 或 `.txt` 文件放入 `knowledge_base/`，然后调用 reload 接口。也可以通过 `RAG_KNOWLEDGE_DIR` 指定其他目录，通过 `RAG_TOP_K` 调整返回的文档数量。

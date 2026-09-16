@@ -15,33 +15,12 @@ headers = {"Content-Type": "application/json"}
 stream_flag = False
 
 
-name = """
-小明
-"""
-
-performance = """
-100米跑成绩：10.5秒，1500米跑成绩：3分20秒，铅球成绩：12米。
-"""
-
-category = """
-搏击
-"""
-# name = """
-# 小崔
-# """
-#
-# performance = """
-# 100米跑成绩：9秒，1500米跑成绩：3分30秒，铅球成绩：15米。
-# """
-#
-# category = """
-# 搏击
-# """
+input_text = "流量最多的套餐是什么？在校生可以办理哪些套餐？"
 
 
 # 第一次请求
 data = {
-    "messages": [{"role": "user", "name": name, "performance": performance, "category": category}],
+    "messages": [{"role": "user", "content": input_text}],
     "stream": stream_flag
 }
 
