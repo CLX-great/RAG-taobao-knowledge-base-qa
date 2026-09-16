@@ -1,130 +1,249 @@
-# RAG Knowledge Assistant
+# 淘宝知识库问答助手
 
-这是一个以 RAG（Retrieval-Augmented Generation，检索增强生成）为主线的 LangChain + FastAPI 淘宝知识库问答项目。系统会先检索订单、退款、物流、售后等资料，再把检索结果交给兼容 OpenAI API 的大模型生成回答。
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=for-the-badge&logo=fastapi" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/RAG-Knowledge%20QA-FF7A59?style=for-the-badge" alt="RAG" />
+</p>
 
-## RAG 流程
+一个基于 RAG（Retrieval-Augmented Generation，检索增强生成）思路实现的淘宝知识库问答系统。它会先从知识库中检索与用户问题最相关的文档，再把检索结果和问题一起发送给大模型生成回答，并在最终输出中附带参考来源。
+
+该项目适用于电商场景中的客服、售后、订单与退换货等知识问答场景，能够帮助用户快速定位答案、降低人工客服压力。
+
+## 项目效果
+
+- 支持订单相关咨询
+- 支持退换货、物流和售后问题
+- 支持优惠券和活动规则查询
+- 每次回答都附带参考来源，易于核验
+- 支持直接扩展知识库内容
+
+## 技术栈
+
+- Python
+- FastAPI
+- TF-IDF 检索
+- OpenAI 兼容接口
+- 阿里云 DashScope（可替换为其他兼容模型服务）
+
+## 系统流程
 
 ```text
-用户问题 -> 文档切块 -> TF-IDF 检索 -> 拼接参考资料 -> LLM 生成 -> 返回来源
+用户提问
+   ↓
+读取知识库
+   ↓
+文档分块与检索
+   ↓
+召回相关资料
+   ↓
+拼接上下文
+   ↓
+大模型生成答案
+   ↓
+返回回答 + 参考来源
 ```
-
-核心实现位于 `rag/`，资料位于 `knowledge_base/`。检索器只使用 Python 标准库，因此不需要单独部署向量数据库；后续可以在同一接口替换为 Chroma、FAISS 或远程向量服务。
 
 ## 项目结构
 
 ```text
-rag/
-|- main.py                 # 共享 FastAPI RAG 服务
-|- retriever.py            # 文档切块与 TF-IDF 检索
-knowledge_base/             # 可直接编辑的 .md/.txt 知识库
-rag_smoke_test.py           # 不依赖 LLM 的检索测试
-basic/ ... withMemoryTest/  # 兼容入口，统一转发到共享 RAG 服务
+.
+├── README.md
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+├── requirements-server.txt
+├── rag_smoke_test.py
+├── rag/
+│   ├── __init__.py
+│   ├── main.py
+│   └── retriever.py
+├── knowledge_base/
+│   └── telecom_plans.md
+├── basic/
+│   ├── main.py
+│   ├── apiTest.py
+│   ├── prompt_template_system.txt
+│   └── prompt_template_user.txt
+├── basicWebUI/
+│   ├── index.html
+│   ├── main.py
+│   ├── apiWebUI.py
+│   ├── nginx.conf
+│   ├── Dockerfile
+│   ├── prompt_template_system.txt
+│   └── prompt_template_user.txt
+├── cot/
+├── selfConsistency/
+├── sportservice/
+├── withMemoryTest/
+└── ...
 ```
 
-## 安装与配置
+## 快速开始
+
+### 1. 安装依赖
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-
-export OPENAI_BASE_URL=http://localhost:3000/v1
-export OPENAI_API_KEY=your-key
-export OPENAI_CHAT_MODEL=qwen-turbo
 ```
 
-`OPENAI_BASE_URL` 可以指向 OneAPI 或其他 OpenAI-compatible 服务。不要把真实 API Key 写入代码或提交到仓库。
+### 2. 配置模型环境变量
 
-## 运行
+当前示例使用阿里云 DashScope 的 OpenAI 兼容接口：
 
-先验证本地检索，不需要启动模型服务：
+```bash
+export OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+export OPENAI_API_KEY=你的真实API_Key
+export OPENAI_CHAT_MODEL=qwen-plus
+```
+
+说明：
+
+- `OPENAI_BASE_URL` 是 DashScope 的兼容模式地址
+- `OPENAI_API_KEY` 仅应保存在后端环境变量中
+- `OPENAI_CHAT_MODEL` 使用 `qwen-plus`
+- 不要把真实密钥写进前端页面，也不要提交到 Git 仓库
+
+### 3. 先验证本地检索
 
 ```bash
 python rag_smoke_test.py
 ```
 
-启动后端：
+该步骤不依赖真实模型，可先确认知识库和文本检索工作正常。
+
+### 4. 启动后端服务
 
 ```bash
 python -m rag.main
 ```
 
-服务地址为 `http://localhost:8000`，接口文档为 `http://localhost:8000/docs`。历史目录仍可直接运行，例如 `python basic/main.py`，它们只是共享 RAG 服务的兼容入口，并分别保留原来的端口号。
+访问地址：
 
-### 本地网页
+- http://localhost:8000
+- http://localhost:8000/docs
 
-另开一个终端运行：
+### 5. 启动前端页面
+
+另开一个终端：
 
 ```bash
 python -m http.server 8080 --directory basicWebUI
 ```
 
-然后打开 `http://localhost:8080`。网页默认请求 `http://localhost:8000`。
+然后打开：
 
-### 放到个人主页展示
-
-个人主页和 RAG 后端需要分别部署：
-
-1. 将 `basicWebUI/index.html` 部署到 GitHub Pages、Vercel 或 Netlify。
-2. 将 Python 后端部署到 Render、Railway、阿里云或自己的服务器，并获得 HTTPS 地址，例如 `https://your-rag-api.example.com`。
-3. 在网页部署前，在 `index.html` 的脚本中加入：
-
-```html
-<script>
-  window.RAG_API_URL = "https://your-rag-api.example.com";
-</script>
+```text
+http://localhost:8080
 ```
 
-   这段配置要放在原有问答脚本之前。
-4. 后端启动时把主页域名加入允许跨域来源：
+前端默认请求后端地址：`http://localhost:8000`。
+
+## 一键演示
+
+如果你只是想本地快速体验，直接执行：
 
 ```bash
-export RAG_ALLOWED_ORIGINS=https://your-homepage.example.com
+python rag_smoke_test.py
 python -m rag.main
 ```
 
-不要把 `OPENAI_API_KEY` 放进网页代码。它只能配置在后端服务器环境变量中。
+然后打开浏览器访问：
 
-### 使用 Docker 部署
+```text
+http://localhost:8080
+```
 
-项目提供了 `Dockerfile`、`basicWebUI/Dockerfile` 和 `docker-compose.yml`。Docker Compose 会启动后端和 Nginx 网页，访客只需要访问同一个地址。
+即可看到和截图相似的淘宝知识库问答助手交互效果。
 
-先在项目根目录创建 `.env`：
+## Docker 部署
+
+项目自带 `Dockerfile` 和 `docker-compose.yml`，可以直接启动：
+
+### 1. 配置 `.env`
 
 ```dotenv
-OPENAI_BASE_URL=https://你的云端模型地址/v1
-OPENAI_API_KEY=你的真实密钥
-OPENAI_CHAT_MODEL=qwen-turbo
+OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+OPENAI_API_KEY=你的真实API_Key
+OPENAI_CHAT_MODEL=qwen-plus
 RAG_ALLOWED_ORIGINS=http://localhost:8080
 ```
 
-启动：
+### 2. 启动服务
 
 ```bash
 docker compose up -d --build
 ```
 
-本地访问：`http://localhost:8080`。停止服务：
+### 3. 访问
+
+```text
+http://localhost:8080
+```
+
+### 4. 停止
 
 ```bash
 docker compose down
 ```
 
-部署到公网服务器时，将 `8080:80` 改成 `80:80` 或由 HTTPS 反向代理转发到 8080，然后把 `OPENAI_BASE_URL` 配成云端可访问的模型服务地址。不要把 `.env` 提交到 Git，也不要把 API Key 写入前端页面。
+## API 文档
 
-## API
+后端兼容 OpenAI 接口，核心地址：
 
-请求 `POST /v1/chat/completions`：
+```http
+POST /v1/chat/completions
+```
+
+示例请求：
 
 ```json
 {
-  "messages": [{"role": "user", "content": "流量最多的套餐是什么？"}],
+  "messages": [
+    {"role": "user", "content": "流量最多的套餐是什么？"}
+  ],
   "stream": false
 }
 ```
 
-回答会在末尾附上检索来源，例如 `telecom_plans.md#0`。健康检查使用 `GET /health`，编辑知识库后可调用 `POST /v1/knowledge/reload` 重新加载。
+返回结果中会附带参考来源，例如：
 
-## 扩展知识库
+```text
+telecom_plans.md#0
+```
 
-将 `.md` 或 `.txt` 文件放入 `knowledge_base/`，然后调用 reload 接口。也可以通过 `RAG_KNOWLEDGE_DIR` 指定其他目录，通过 `RAG_TOP_K` 调整返回的文档数量。
+其他接口：
+
+- `GET /health`：健康检查
+- `POST /v1/knowledge/reload`：重新加载知识库
+
+## Knowledge Base 扩展
+
+将 `.md` 或 `.txt` 文件放到 `knowledge_base/` 目录下，再调用 reload 接口即可更新问答知识库。
+
+如果需要调整召回数量，可设置：
+
+```bash
+export RAG_TOP_K=5
+```
+
+或者通过 `RAG_KNOWLEDGE_DIR` 指定自定义知识库目录。
+
+## 适用场景
+
+- 电商客服问答助手
+- 售后与退款知识库查询
+- 订单问题智能解答
+- 运营规则检索工具
+- 面向 Demo 的轻量 RAG 应用
+
+## 备注
+
+- 目前知识库内容位于 `knowledge_base/`
+- 当前实现不依赖向量数据库，适合小型知识库快速落地
+- 后续可以替换为 Chroma、FAISS 或其他更强的向量检索方案
+
+如果你将该项目用于展示、汇报或上线部署，建议优先准备真实业务知识库，再绑定稳定的 DashScope 模型参数即可。
