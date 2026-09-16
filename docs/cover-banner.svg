@@ -1,0 +1,24 @@
+<svg width="1600" height="500" viewBox="0 0 1600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="500" rx="36" fill="#F7F5F2"/>
+  <rect x="70" y="72" width="1460" height="356" rx="28" fill="#F0F0F0"/>
+  <rect x="128" y="132" width="520" height="62" rx="18" fill="#FFFFFF"/>
+  <text x="156" y="174" fill="#1F2A37" font-size="40" font-family="Arial, Helvetica, sans-serif" font-weight="700">淘宝知识库问答助手</text>
+  <text x="156" y="246" fill="#4B5563" font-size="30" font-family="Arial, Helvetica, sans-serif">支持订单、退换货、物流、售后与优惠券查询</text>
+
+  <g>
+    <rect x="980" y="130" width="430" height="190" rx="22" fill="#F3E0D8"/>
+    <rect x="1002" y="160" width="206" height="54" rx="14" fill="#FFF7F2"/>
+    <text x="1026" y="196" fill="#1F2A37" font-size="26" font-family="Arial, Helvetica, sans-serif">订单查询</text>
+    <text x="1002" y="270" fill="#1F2A37" font-size="20" font-family="Arial, Helvetica, sans-serif">支持 FAQ + 检索增强回答</text>
+  </g>
+
+  <g>
+    <rect x="110" y="300" width="620" height="88" rx="20" fill="#FFFFFF"/>
+    <text x="146" y="352" fill="#1F2A37" font-size="26" font-family="Arial, Helvetica, sans-serif">用户问题 → 知识库检索 → AI 答案</text>
+  </g>
+
+  <g>
+    <rect x="1240" y="348" width="130" height="46" rx="14" fill="#FF8E3C"/>
+    <text x="1268" y="379" fill="#FFFFFF" font-size="22" font-family="Arial, Helvetica, sans-serif" font-weight="700">Demo</text>
+  </g>
+</svg>

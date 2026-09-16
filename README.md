@@ -1,6 +1,10 @@
 # 淘宝知识库问答助手
 
 <p align="center">
+  <img src="./docs/cover-banner.svg" alt="淘宝知识库问答助手封面" width="100%" />
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python" alt="Python" />
   <img src="https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=for-the-badge&logo=fastapi" alt="FastAPI" />
   <img src="https://img.shields.io/badge/RAG-Knowledge%20QA-FF7A59?style=for-the-badge" alt="RAG" />
@@ -17,6 +21,12 @@
 - 支持优惠券和活动规则查询
 - 每次回答都附带参考来源，易于核验
 - 支持直接扩展知识库内容
+
+## Demo 预览
+
+<p align="center">
+  <img src="./docs/demo-preview.svg" alt="Demo 预览" width="100%" />
+</p>
 
 ## 技术栈
 
@@ -245,5 +255,13 @@ export RAG_TOP_K=5
 - 目前知识库内容位于 `knowledge_base/`
 - 当前实现不依赖向量数据库，适合小型知识库快速落地
 - 后续可以替换为 Chroma、FAISS 或其他更强的向量检索方案
+
+## License
+
+本项目已附带 MIT License，适合开源展示和二次开发。详见 [LICENSE](LICENSE)。
+
+## Git Ignore
+
+该仓库已补充 `.gitignore`，已覆盖 Python 虚拟环境、缓存目录、IDE 配置和敏感环境变量文件，避免把 `.venv`、`.env`、缓存文件等不必要内容上传到 Git。
 
 如果你将该项目用于展示、汇报或上线部署，建议优先准备真实业务知识库，再绑定稳定的 DashScope 模型参数即可。
